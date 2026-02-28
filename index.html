@@ -1,44 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>India Shock News | Breaking Crime & Viral Updates</title>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Shock News | Breaking Crime & Viral Updates</title>
+<meta name="description" content="Latest shocking news from India. Crime, accidents, politics and viral updates in video format.">
+
+<!-- SEO Schema -->
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "NewsMediaOrganization",
+ "name": "India Shock News",
+ "url": "https://porwalsam44-beep.github.io/india-shock-news/"
+}
+</script>
 
 <style>
 body{margin:0;font-family:Arial;background:#0f0f0f;color:white;}
-header{background:linear-gradient(90deg,#ff2e2e,#b30000);padding:18px;text-align:center;font-size:22px;font-weight:bold;letter-spacing:1px;}
-.container{padding:15px;max-width:1000px;margin:auto;}
+header{background:linear-gradient(90deg,#ff2e2e,#b30000);padding:20px;text-align:center;font-size:22px;font-weight:bold;}
+.container{max-width:1000px;margin:auto;padding:20px;}
+.search{width:100%;padding:12px;border-radius:6px;border:none;margin-bottom:20px;font-size:14px;}
 .filters{text-align:center;margin-bottom:20px;}
-button{
-background:#222;
-color:white;
-border:1px solid #444;
-padding:8px 14px;
-margin:5px;
-cursor:pointer;
-border-radius:20px;
-}
+button{background:#1c1c1c;color:white;border:1px solid #444;padding:8px 14px;margin:5px;border-radius:20px;cursor:pointer;}
 button:hover{background:#ff2e2e;}
-.card{
-background:#1c1c1c;
-margin-bottom:25px;
-border-radius:12px;
-overflow:hidden;
-box-shadow:0 0 20px rgba(255,0,0,0.2);
-transition:0.3s;
-}
+.card{background:#1c1c1c;margin-bottom:25px;border-radius:12px;overflow:hidden;box-shadow:0 0 20px rgba(255,0,0,0.2);transition:0.3s;}
 .card:hover{transform:scale(1.02);}
 iframe{width:100%;height:300px;}
 .content{padding:15px;}
 .title{font-size:17px;font-weight:bold;margin-bottom:8px;}
 .meta{font-size:13px;color:#aaa;margin-bottom:8px;}
 .desc{font-size:14px;color:#ccc;margin-bottom:10px;}
-.trending{
-background:#141414;
-padding:10px;
-margin-bottom:20px;
-border-left:4px solid red;
-}
+.loader{border:5px solid #333;border-top:5px solid red;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto;}
+@keyframes spin{100%{transform:rotate(360deg);}}
+.ad-box{margin:20px 0;text-align:center;padding:20px;background:#141414;border:1px dashed #444;}
 footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 </style>
 </head>
@@ -49,9 +44,7 @@ footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 
 <div class="container">
 
-<div class="trending">
-🔥 <b>Trending:</b> Latest breaking crime & shocking incidents across India
-</div>
+<input type="text" id="searchBox" class="search" placeholder="Search news...">
 
 <div class="filters">
 <button onclick="setCategory('all')">All</button>
@@ -61,7 +54,13 @@ footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 <button onclick="setCategory('viral')">Viral</button>
 </div>
 
-<div id="videos">Loading...</div>
+<div class="ad-box">
+<!-- Adsense code will go here -->
+Advertisement Space
+</div>
+
+<div id="videos"></div>
+<div id="loader" class="loader"></div>
 
 </div>
 
@@ -72,71 +71,82 @@ All videos belong to respective owners. Embedded via official YouTube sources.
 <script>
 
 const API_KEY = "AIzaSyCTZ9OCqzxLqMW0Z3htSasQcim73xkTZv0";
-let category = "all";
 
 const CHANNELS = [
-"UCt4t-jeY85JegMlZ-E5UWtA",  // Aaj Tak
-"UCYPvAwZP8pZhSMW8qs7cVCw",  // NDTV
-"UC16niRr50-MSBwiO3YDb3RA"   // India Today
+"UCt4t-jeY85JegMlZ-E5UWtA",
+"UCYPvAwZP8pZhSMW8qs7cVCw",
+"UC16niRr50-MSBwiO3YDb3RA"
 ];
+
+let category = "all";
+let nextPageToken = "";
+let loading = false;
 
 const CATEGORY_KEYWORDS = {
 crime:["crime","murder","arrest","attack","rape"],
 accident:["accident","crash","collision","train","fire"],
 politics:["minister","election","government","parliament"],
-viral:["viral","video","shocking","unexpected"]
+viral:["viral","video","shocking"]
 };
 
 function setCategory(cat){
 category = cat;
+document.getElementById("videos").innerHTML="";
+nextPageToken="";
 loadVideos();
 }
 
 async function loadVideos(){
-let container = document.getElementById("videos");
-container.innerHTML = "Loading...";
+if(loading) return;
+loading = true;
+document.getElementById("loader").style.display="block";
 
 for(let channel of CHANNELS){
 
-let url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channel}&part=snippet,id&order=date&maxResults=5`;
+let url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channel}&part=snippet,id&order=date&maxResults=5&pageToken=${nextPageToken}`;
 
 let res = await fetch(url);
 let data = await res.json();
+nextPageToken = data.nextPageToken || "";
 
-if(!data.items) return;
-
-data.items.forEach(item=>{
-
+data.items?.forEach(item=>{
 if(!item.id.videoId) return;
 
 let title = item.snippet.title.toLowerCase();
-
 if(category !== "all"){
-let keywords = CATEGORY_KEYWORDS[category];
-if(!keywords.some(word=>title.includes(word))) return;
+if(!CATEGORY_KEYWORDS[category].some(word=>title.includes(word))) return;
 }
 
 let date = new Date(item.snippet.publishedAt).toLocaleString();
 
-container.innerHTML += `
+document.getElementById("videos").innerHTML += `
 <div class="card">
 <iframe src="https://www.youtube.com/embed/${item.id.videoId}" frameborder="0" allowfullscreen></iframe>
 <div class="content">
 <div class="title">${item.snippet.title}</div>
-<div class="meta">Channel: ${item.snippet.channelTitle} | ${date}</div>
+<div class="meta">${item.snippet.channelTitle} | ${date}</div>
 <div class="desc">${item.snippet.description.substring(0,180)}...</div>
 </div>
-</div>
-`;
+</div>`;
+});
+}
 
+document.getElementById("loader").style.display="none";
+loading = false;
+}
+
+window.addEventListener("scroll",()=>{
+if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 200){
+loadVideos();
+}
 });
 
-}
-
-}
-
-// Auto refresh every 10 minutes
-setInterval(loadVideos, 600000);
+document.getElementById("searchBox").addEventListener("input", function(){
+let value = this.value.toLowerCase();
+document.querySelectorAll(".card").forEach(card=>{
+card.style.display = card.innerText.toLowerCase().includes(value) ? "block" : "none";
+});
+});
 
 loadVideos();
 

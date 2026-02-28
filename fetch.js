@@ -8,8 +8,14 @@ const CHANNEL_ID = "UCt4t-jeY85JegMlZ-E5UWtA";
 
 async function fetchYouTube() {
   const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5`;
+  
+  console.log("Fetching from:", url);
+
   const res = await fetch(url);
   const data = await res.json();
+
+  console.log("YouTube Response:", JSON.stringify(data, null, 2));
+
   return data.items || [];
 }
 
@@ -35,11 +41,13 @@ async function saveToFirestore(video) {
   });
 
   const result = await response.text();
-  console.log(result);
+  console.log("Firestore Response:", result);
 }
 
 async function run() {
   const videos = await fetchYouTube();
+
+  console.log("Videos found:", videos.length);
 
   for (let video of videos) {
     if (!video.id.videoId) continue;

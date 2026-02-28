@@ -7,26 +7,29 @@ const FIREBASE_API_KEY = process.env.FB_API_KEY;
 const CHANNEL_ID = "UCt4t-jeY85JegMlZ-E5UWtA";
 
 async function fetchYouTube() {
-  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5`;
+  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5&type=video`;
   
-  console.log("Fetching from:", url);
-
   const res = await fetch(url);
   const data = await res.json();
 
-  console.log("YouTube Response:", JSON.stringify(data, null, 2));
+  if (data.error) {
+    console.log("YouTube Error:", data.error);
+    return [];
+  }
 
   return data.items || [];
 }
 
 async function saveToFirestore(video) {
 
+  const videoId = video.id.videoId;
+
   const firestoreURL =
-    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/news?key=${FIREBASE_API_KEY}`;
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/news/${videoId}?key=${FIREBASE_API_KEY}`;
 
   const body = {
     fields: {
-      videoId: { stringValue: video.id.videoId },
+      videoId: { stringValue: videoId },
       title: { stringValue: video.snippet.title },
       description: { stringValue: video.snippet.description.substring(0,200) },
       channel: { stringValue: video.snippet.channelTitle },
@@ -35,19 +38,17 @@ async function saveToFirestore(video) {
   };
 
   const response = await fetch(firestoreURL, {
-    method: "POST",
+    method: "PATCH",   // IMPORTANT: PATCH replaces document
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
 
   const result = await response.text();
-  console.log("Firestore Response:", result);
+  console.log("Saved:", videoId);
 }
 
 async function run() {
   const videos = await fetchYouTube();
-
-  console.log("Videos found:", videos.length);
 
   for (let video of videos) {
     if (!video.id.videoId) continue;

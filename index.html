@@ -3,29 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>India Shock News | Breaking Crime & Viral Updates</title>
-<meta name="description" content="Latest shocking news from India. Crime, accidents, politics and viral updates in video format.">
-
-<!-- SEO Schema -->
-<script type="application/ld+json">
-{
- "@context": "https://schema.org",
- "@type": "NewsMediaOrganization",
- "name": "India Shock News",
- "url": "https://porwalsam44-beep.github.io/india-shock-news/"
-}
-</script>
+<title>India Shock News</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#0f0f0f;color:white;}
 header{background:linear-gradient(90deg,#ff2e2e,#b30000);padding:20px;text-align:center;font-size:22px;font-weight:bold;}
 .container{max-width:1000px;margin:auto;padding:20px;}
-.search{width:100%;padding:12px;border-radius:6px;border:none;margin-bottom:20px;font-size:14px;}
-.filters{text-align:center;margin-bottom:20px;}
-button{background:#1c1c1c;color:white;border:1px solid #444;padding:8px 14px;margin:5px;border-radius:20px;cursor:pointer;}
-button:hover{background:#ff2e2e;}
-.card{background:#1c1c1c;margin-bottom:25px;border-radius:12px;overflow:hidden;box-shadow:0 0 20px rgba(255,0,0,0.2);transition:0.3s;}
-.card:hover{transform:scale(1.02);}
+.card{background:#1c1c1c;margin-bottom:25px;border-radius:12px;overflow:hidden;box-shadow:0 0 20px rgba(255,0,0,0.2);}
 iframe{width:100%;height:300px;}
 .content{padding:15px;}
 .title{font-size:17px;font-weight:bold;margin-bottom:8px;}
@@ -33,7 +17,6 @@ iframe{width:100%;height:300px;}
 .desc{font-size:14px;color:#ccc;margin-bottom:10px;}
 .loader{border:5px solid #333;border-top:5px solid red;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto;}
 @keyframes spin{100%{transform:rotate(360deg);}}
-.ad-box{margin:20px 0;text-align:center;padding:20px;background:#141414;border:1px dashed #444;}
 footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 </style>
 </head>
@@ -43,112 +26,57 @@ footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 <header>⚡ India Shocking News</header>
 
 <div class="container">
-
-<input type="text" id="searchBox" class="search" placeholder="Search news...">
-
-<div class="filters">
-<button onclick="setCategory('all')">All</button>
-<button onclick="setCategory('crime')">Crime</button>
-<button onclick="setCategory('accident')">Accident</button>
-<button onclick="setCategory('politics')">Politics</button>
-<button onclick="setCategory('viral')">Viral</button>
-</div>
-
-<div class="ad-box">
-<!-- Adsense code will go here -->
-Advertisement Space
-</div>
-
 <div id="videos"></div>
 <div id="loader" class="loader"></div>
-
 </div>
 
-<footer>
-All videos belong to respective owners. Embedded via official YouTube sources.
-</footer>
+<footer>Powered by Firebase Cache</footer>
 
-<script>
+<script type="module">
 
-const API_KEY = "AIzaSyCTZ9OCqzxLqMW0Z3htSasQcim73xkTZv0";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const CHANNELS = [
-"UCt4t-jeY85JegMlZ-E5UWtA",
-"UCYPvAwZP8pZhSMW8qs7cVCw",
-"UC16niRr50-MSBwiO3YDb3RA"
-];
-
-let category = "all";
-let nextPageToken = "";
-let loading = false;
-
-const CATEGORY_KEYWORDS = {
-crime:["crime","murder","arrest","attack","rape"],
-accident:["accident","crash","collision","train","fire"],
-politics:["minister","election","government","parliament"],
-viral:["viral","video","shocking"]
+/* 🔥 REPLACE THIS ENTIRE OBJECT WITH YOUR FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyDUZh7BX5s_kcMLxKPjq73th6GS1VHl2Bw",
+  authDomain: "india-shock-news-dd49b.firebaseapp.com",
+  projectId: "india-shock-news-dd49b",
+  storageBucket: "india-shock-news-dd49b.firebasestorage.app",
+  messagingSenderId: "889325825355",
+  appId: "1:889325825355:web:1a2778a1542cbc60490cce"
 };
 
-function setCategory(cat){
-category = cat;
-document.getElementById("videos").innerHTML="";
-nextPageToken="";
-loadVideos();
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-async function loadVideos(){
-if(loading) return;
-loading = true;
-document.getElementById("loader").style.display="block";
+const container = document.getElementById("videos");
+const loader = document.getElementById("loader");
 
-for(let channel of CHANNELS){
+async function loadNews(){
+loader.style.display="block";
+container.innerHTML="";
 
-let url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channel}&part=snippet,id&order=date&maxResults=5&pageToken=${nextPageToken}`;
+const querySnapshot = await getDocs(collection(db, "news"));
 
-let res = await fetch(url);
-let data = await res.json();
-nextPageToken = data.nextPageToken || "";
+querySnapshot.forEach((doc)=>{
+const data = doc.data();
 
-data.items?.forEach(item=>{
-if(!item.id.videoId) return;
-
-let title = item.snippet.title.toLowerCase();
-if(category !== "all"){
-if(!CATEGORY_KEYWORDS[category].some(word=>title.includes(word))) return;
-}
-
-let date = new Date(item.snippet.publishedAt).toLocaleString();
-
-document.getElementById("videos").innerHTML += `
+container.innerHTML += `
 <div class="card">
-<iframe src="https://www.youtube.com/embed/${item.id.videoId}" frameborder="0" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/${data.videoId}" frameborder="0" allowfullscreen></iframe>
 <div class="content">
-<div class="title">${item.snippet.title}</div>
-<div class="meta">${item.snippet.channelTitle} | ${date}</div>
-<div class="desc">${item.snippet.description.substring(0,180)}...</div>
+<div class="title">${data.title}</div>
+<div class="meta">${data.channel} | ${data.date}</div>
+<div class="desc">${data.description}</div>
 </div>
 </div>`;
 });
+
+loader.style.display="none";
 }
 
-document.getElementById("loader").style.display="none";
-loading = false;
-}
-
-window.addEventListener("scroll",()=>{
-if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 200){
-loadVideos();
-}
-});
-
-document.getElementById("searchBox").addEventListener("input", function(){
-let value = this.value.toLowerCase();
-document.querySelectorAll(".card").forEach(card=>{
-card.style.display = card.innerText.toLowerCase().includes(value) ? "block" : "none";
-});
-});
-
-loadVideos();
+loadNews();
 
 </script>
 

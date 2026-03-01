@@ -7,8 +7,8 @@ const FIREBASE_API_KEY = process.env.FB_API_KEY;
 const CHANNEL_ID = "UCt4t-jeY85JegMlZ-E5UWtA";
 
 async function fetchYouTube() {
-  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5&type=video`;
-  
+  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=india breaking news&part=snippet,id&type=video&order=date&maxResults=10`;
+
   const res = await fetch(url);
   const data = await res.json();
 
@@ -19,7 +19,6 @@ async function fetchYouTube() {
 
   return data.items || [];
 }
-
 async function saveToFirestore(video) {
 
   const videoId = video.id.videoId;

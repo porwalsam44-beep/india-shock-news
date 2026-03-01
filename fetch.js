@@ -7,7 +7,7 @@ const FIREBASE_API_KEY = process.env.FB_API_KEY;
 const MAX_VIDEOS = 40;
 
 async function fetchYouTube() {
-  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=india breaking news&part=snippet,id&type=video&order=date&maxResults=20`;
+  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=india breaking news&part=snippet,id&type=video&order=date&maxResults=25`;
 
   const res = await fetch(url);
   const data = await res.json();
@@ -19,23 +19,32 @@ async function fetchYouTube() {
 
   const items = data.items || [];
 
-  const unique = [];
-  const seenTitles = new Set();
+  const uniqueChannels = new Set();
+  const filtered = [];
 
   for (let video of items) {
-    const cleanTitle = video.snippet.title
-      .toLowerCase()
-      .replace(/\d+\s?(am|pm)/g, "")
-      .replace(/top headlines today/g, "")
-      .trim();
 
-    if (!seenTitles.has(cleanTitle)) {
-      seenTitles.add(cleanTitle);
-      unique.push(video);
+    const channel = video.snippet.channelTitle;
+
+    // Skip long headline shows
+    const title = video.snippet.title.toLowerCase();
+    if (
+      title.includes("top headlines") ||
+      title.includes("full bulletin") ||
+      title.includes("live") ||
+      title.includes("today news")
+    ) continue;
+
+    // Allow only one video per channel
+    if (!uniqueChannels.has(channel)) {
+      uniqueChannels.add(channel);
+      filtered.push(video);
     }
+
+    if (filtered.length >= 10) break;
   }
 
-  return unique.slice(0,10);
+  return filtered;
 }
 function detectCategory(title) {
   title = title.toLowerCase();

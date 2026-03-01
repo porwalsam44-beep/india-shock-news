@@ -6,43 +6,85 @@
 <title>India Shock Reels</title>
 
 <style>
+*{box-sizing:border-box}
 body{
   margin:0;
-  background:black;
-  font-family:Arial;
+  background:linear-gradient(to bottom,#000,#111);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
   overflow-y:scroll;
   scroll-snap-type:y mandatory;
+  color:white;
 }
 .reel{
   height:100vh;
   width:100%;
   scroll-snap-align:start;
   position:relative;
+  overflow:hidden;
 }
 iframe{
   width:100%;
   height:100%;
+  object-fit:cover;
 }
 .overlay{
   position:absolute;
-  bottom:20px;
-  left:20px;
-  color:white;
-  text-shadow:0 0 10px black;
+  bottom:0;
+  left:0;
+  width:100%;
+  padding:25px;
+  background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);
+}
+.category{
+  display:inline-block;
+  padding:5px 12px;
+  background:#ff2e2e;
+  border-radius:20px;
+  font-size:12px;
+  margin-bottom:10px;
 }
 .title{
-  font-size:16px;
-  font-weight:bold;
-  margin-bottom:5px;
+  font-size:18px;
+  font-weight:600;
+  margin-bottom:8px;
 }
 .meta{
   font-size:13px;
   opacity:0.8;
 }
+.side-actions{
+  position:absolute;
+  right:15px;
+  bottom:120px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  font-size:14px;
+  align-items:center;
+}
+.side-actions div{
+  text-align:center;
+  cursor:pointer;
+}
+.progress{
+  position:absolute;
+  top:0;
+  left:0;
+  height:4px;
+  background:#ff2e2e;
+  width:0%;
+  transition:width 0.2s linear;
+}
 .loader{
   text-align:center;
-  color:white;
   padding:20px;
+}
+.fade-in{
+  animation:fade 0.5s ease;
+}
+@keyframes fade{
+  from{opacity:0}
+  to{opacity:1}
 }
 </style>
 </head>
@@ -66,6 +108,7 @@ const firebaseConfig = {
   appId: "1:889325825355:web:1a2778a1542cbc60490cce"
 };
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -87,16 +130,23 @@ function render(){
 
   allNews.slice(0,visibleCount).forEach(n=>{
     container.innerHTML+=`
-      <div class="reel">
+      <div class="reel fade-in">
+        <div class="progress"></div>
         <iframe 
-          src="https://www.youtube.com/embed/${n.videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${n.videoId}" 
-          frameborder="0" 
-          allow="autoplay; encrypted-media" 
+          src="https://www.youtube.com/embed/${n.videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${n.videoId}"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
           allowfullscreen>
         </iframe>
         <div class="overlay">
+          <div class="category">${n.category}</div>
           <div class="title">${n.title}</div>
           <div class="meta">${n.channel}</div>
+        </div>
+        <div class="side-actions">
+          <div>❤️<br>Like</div>
+          <div>🔁<br>Share</div>
+          <div>💬<br>Comment</div>
         </div>
       </div>
     `;

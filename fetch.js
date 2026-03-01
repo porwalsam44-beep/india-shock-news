@@ -7,7 +7,7 @@ const FIREBASE_API_KEY = process.env.FB_API_KEY;
 const MAX_VIDEOS = 40;
 
 async function fetchYouTube() {
-  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=india breaking news crime accident politics&part=snippet,id&type=video&order=date&maxResults=10`;
+  const url = `https://www.googleapis.com/youtube/v3/search?key=${YT_KEY}&q=india breaking news&part=snippet,id&type=video&order=date&maxResults=20`;
 
   const res = await fetch(url);
   const data = await res.json();
@@ -17,9 +17,26 @@ async function fetchYouTube() {
     return [];
   }
 
-  return data.items || [];
-}
+  const items = data.items || [];
 
+  const unique = [];
+  const seenTitles = new Set();
+
+  for (let video of items) {
+    const cleanTitle = video.snippet.title
+      .toLowerCase()
+      .replace(/\d+\s?(am|pm)/g, "")
+      .replace(/top headlines today/g, "")
+      .trim();
+
+    if (!seenTitles.has(cleanTitle)) {
+      seenTitles.add(cleanTitle);
+      unique.push(video);
+    }
+  }
+
+  return unique.slice(0,10);
+}
 function detectCategory(title) {
   title = title.toLowerCase();
 

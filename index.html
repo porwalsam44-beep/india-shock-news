@@ -3,80 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Shock News</title>
 
-<title>India Shock News – Breaking Crime, Politics & Viral News Reels</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-<meta name="description" content="Watch latest shocking breaking news from India. Crime, politics, viral incidents and trending updates in short reel format. Updated daily.">
-
-<meta name="keywords" content="India breaking news, India crime news, viral news India, latest Indian news reels, political news India">
-
-<meta name="robots" content="index, follow">
-
-<meta property="og:title" content="India Shock News">
-<meta property="og:description" content="Latest breaking shocking news from India in reels format.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://india-shock-news.netlify.app/">
-
-<link rel="canonical" href="https://india-shock-news.netlify.app/">
-
-<!-- Google Verification -->
-<meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE">
-
-<!-- News Structured Data -->
-<script type="application/ld+json">
-{
- "@context": "https://schema.org",
- "@type": "NewsMediaOrganization",
- "name": "India Shock News",
- "url": "https://india-shock-news.netlify.app/",
- "logo": {
-   "@type": "ImageObject",
-   "url": "https://india-shock-news.netlify.app/logo.png"
- }
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',sans-serif;
+  background:#000;
+  color:#fff;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
 }
-</script>
-
-</head>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>India Shock News – Breaking Crime, Politics & Viral News Reels</title>
-
-<meta name="description" content="Watch latest shocking breaking news from India. Crime, politics, viral incidents and trending updates in short reel format. Updated daily.">
-
-<meta name="keywords" content="India breaking news, India crime news, viral news India, latest Indian news reels, political news India">
-
-<meta name="robots" content="index, follow">
-
-<meta property="og:title" content="India Shock News">
-<meta property="og:description" content="Latest breaking shocking news from India in reels format.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://india-shock-news.netlify.app/">
-
-<link rel="canonical" href="https://india-shock-news.netlify.app/">
-
-<!-- Google Verification -->
-<meta name="google-site-verification" content="PASTE_YOUR_CODE_HERE">
-
-<!-- News Structured Data -->
-<script type="application/ld+json">
-{
- "@context": "https://schema.org",
- "@type": "NewsMediaOrganization",
- "name": "India Shock News",
- "url": "https://india-shock-news.netlify.app/",
- "logo": {
-   "@type": "ImageObject",
-   "url": "https://india-shock-news.netlify.app/logo.png"
- }
+.reel{
+  height:100vh;
+  width:100%;
+  position:relative;
+  scroll-snap-align:start;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#000;
 }
-</script>
-
+.video-container{
+  position:absolute;
+  inset:0;
+}
+iframe{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.overlay{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  padding:25px;
+  background:linear-gradient(to top,rgba(0,0,0,0.9),transparent);
+}
+.category{
+  font-size:12px;
+  font-weight:600;
+  color:#ff3b3b;
+  margin-bottom:8px;
+}
+.title{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:8px;
+  line-height:1.3;
+}
+.meta{
+  font-size:13px;
+  opacity:0.8;
+}
+.actions{
+  position:absolute;
+  right:15px;
+  bottom:120px;
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+  align-items:center;
+}
+.action-btn{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  cursor:pointer;
+  transition:0.2s;
+}
+.action-btn:hover{
+  transform:scale(1.1);
+}
+.heart.active{
+  color:#ff2e63;
+}
+.double-heart{
+  position:absolute;
+  font-size:80px;
+  opacity:0;
+  pointer-events:none;
+}
+.double-heart.show{
+  animation:pop 0.6s ease;
+}
+@keyframes pop{
+  0%{opacity:0;transform:scale(0.5)}
+  50%{opacity:1;transform:scale(1.3)}
+  100%{opacity:0;transform:scale(1)}
+}
+.top-bar{
+  position:fixed;
+  top:0;
+  width:100%;
+  padding:15px;
+  display:flex;
+  justify-content:center;
+  font-weight:700;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(10px);
+  z-index:10;
+}
+</style>
 </head>
+
 <body>
 
-<div id="reels"></div>
+<div class="top-bar">⚡ India Shock News</div>
+<div id="feed"></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 
@@ -94,78 +136,48 @@ const firebaseConfig = {
   appId: "1:889325825355:web:1a2778a1542cbc60490cce"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let players = [];
-let feedData = [];
-let activeIndex = 0;
+let players=[];
+let activeIndex=0;
 
-/* =========================
-   LOAD + SMART ALGORITHM
-========================= */
-
-async function loadFeed() {
-  const snapshot = await getDocs(collection(db,"news"));
-  feedData = [];
-  snapshot.forEach(doc => feedData.push(doc.data()));
-
-  // Smart ranking
-  feedData.forEach(n=>{
-    const hoursOld = (Date.now() - new Date(n.publishedAt)) / 3600000;
-    const recencyScore = Math.max(0, 48 - hoursOld);
-    const randomness = Math.random() * 10;
-    const categoryBoost = n.category === getPreferredCategory() ? 8 : 0;
-    n.algorithmScore = recencyScore + randomness + categoryBoost;
-  });
-
-  feedData.sort((a,b)=> b.algorithmScore - a.algorithmScore);
-
-  // Shuffle top 15 for dynamic refresh
-  feedData = feedData.slice(0,15).sort(()=>Math.random()-0.5);
-
-  render();
+async function load(){
+  const snap=await getDocs(collection(db,"news"));
+  const data=[];
+  snap.forEach(doc=>data.push(doc.data()));
+  data.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));
+  render(data);
 }
 
-/* =========================
-   RENDER
-========================= */
-
-function render(){
-  const container=document.getElementById("reels");
+function render(data){
+  const container=document.getElementById("feed");
   container.innerHTML="";
-  players=[];
-
-  feedData.forEach((n,i)=>{
+  data.forEach((n,i)=>{
     container.innerHTML+=`
       <div class="reel" data-index="${i}">
-        <div class="player" id="player-${i}"></div>
+        <div class="video-container" id="player-${i}"></div>
         <div class="overlay">
           <div class="category">${n.category}</div>
           <div class="title">${n.title}</div>
           <div class="meta">${n.channel}</div>
         </div>
         <div class="actions">
-          <div class="heart" onclick="toggleLike(this)">❤️<br><small>Like</small></div>
-          <div>🔁<br><small>Share</small></div>
+          <div class="action-btn heart" onclick="toggleLike(this)">❤️</div>
+          <div class="action-btn">🔁</div>
         </div>
-        <div class="double-tap">❤️</div>
+        <div class="double-heart">❤️</div>
       </div>
     `;
   });
 
-  initPlayers();
-  observeReels();
+  initPlayers(data);
+  observe();
 }
 
-/* =========================
-   YOUTUBE PLAYER CONTROL
-========================= */
-
-function initPlayers(){
-  feedData.forEach((n,i)=>{
-    players[i] = new YT.Player(`player-${i}`,{
+function initPlayers(data){
+  data.forEach((n,i)=>{
+    players[i]=new YT.Player(`player-${i}`,{
       videoId:n.videoId,
       playerVars:{
         autoplay:0,
@@ -177,72 +189,38 @@ function initPlayers(){
   });
 }
 
-function observeReels(){
+function observe(){
   const reels=document.querySelectorAll(".reel");
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{
-      const index=parseInt(entry.target.dataset.index);
+      const i=parseInt(entry.target.dataset.index);
       if(entry.isIntersecting){
-        activeIndex=index;
-        play(index);
-        pauseOthers(index);
+        activeIndex=i;
+        players[i]?.playVideo();
+        players.forEach((p,index)=>{
+          if(index!==i) p?.pauseVideo();
+        });
       }
     });
   },{threshold:0.75});
   reels.forEach(r=>observer.observe(r));
 }
 
-function play(i){
-  if(players[i]?.playVideo)
-    players[i].playVideo();
-}
-
-function pauseOthers(active){
-  players.forEach((p,i)=>{
-    if(i!==active && p?.pauseVideo)
-      p.pauseVideo();
-  });
-}
-
-/* =========================
-   USER BEHAVIOR TRACKING
-========================= */
-
 window.toggleLike=function(el){
   el.classList.toggle("active");
-  const category = feedData[activeIndex].category;
-  localStorage.setItem("preferredCategory",category);
 };
-
-function getPreferredCategory(){
-  return localStorage.getItem("preferredCategory") || "None";
-}
 
 document.addEventListener("dblclick",e=>{
   const reel=e.target.closest(".reel");
   if(!reel) return;
-  const heart=reel.querySelector(".double-tap");
+  const heart=reel.querySelector(".double-heart");
   heart.classList.add("show");
   setTimeout(()=>heart.classList.remove("show"),600);
 });
 
-/* =========================
-   AUTO REFRESH EVERY 60s
-========================= */
-
-setInterval(()=>{
-  loadFeed();
-},60000);
-
-/* ========================= */
-
-loadFeed();
+load();
 
 </script>
-<footer style="background:#000;color:#aaa;padding:20px;text-align:center;font-size:14px">
-<a href="/about.html" style="color:#aaa;margin:0 10px">About</a>
-<a href="/privacy.html" style="color:#aaa;margin:0 10px">Privacy</a>
-<a href="/contact.html" style="color:#aaa;margin:0 10px">Contact</a>
-</footer>
+
 </body>
 </html>

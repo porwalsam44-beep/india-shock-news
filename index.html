@@ -11,116 +11,81 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   font-family:'Inter',sans-serif;
-  background:#000;
-  color:#fff;
-  overflow-y:scroll;
-  scroll-snap-type:y mandatory;
+  background:#fafafa;
+  color:#111;
 }
-.reel{
-  height:100vh;
+.header{
+  position:sticky;
+  top:0;
+  background:#fff;
+  padding:15px;
+  font-weight:700;
+  font-size:18px;
+  text-align:center;
+  border-bottom:1px solid #ddd;
+  z-index:10;
+}
+.feed{
+  max-width:600px;
+  margin:auto;
+  padding-bottom:50px;
+}
+.card{
+  background:#fff;
+  margin:20px 10px;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  transition:0.2s;
+}
+.card:hover{
+  transform:translateY(-3px);
+}
+.video{
   width:100%;
-  position:relative;
-  scroll-snap-align:start;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#000;
+  height:340px;
 }
-.video-container{
-  position:absolute;
-  inset:0;
-}
-iframe{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-.overlay{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  padding:25px;
-  background:linear-gradient(to top,rgba(0,0,0,0.9),transparent);
+.info{
+  padding:15px;
 }
 .category{
   font-size:12px;
   font-weight:600;
-  color:#ff3b3b;
-  margin-bottom:8px;
+  color:#ff2e2e;
+  margin-bottom:6px;
 }
 .title{
-  font-size:18px;
+  font-size:16px;
   font-weight:700;
-  margin-bottom:8px;
-  line-height:1.3;
+  margin-bottom:6px;
+  line-height:1.4;
 }
 .meta{
   font-size:13px;
-  opacity:0.8;
+  color:#666;
+  margin-bottom:10px;
 }
 .actions{
-  position:absolute;
-  right:15px;
-  bottom:120px;
   display:flex;
-  flex-direction:column;
-  gap:28px;
-  align-items:center;
-}
-.action-btn{
-  background:rgba(255,255,255,0.08);
-  backdrop-filter:blur(10px);
-  width:55px;
-  height:55px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  gap:15px;
   font-size:20px;
-  cursor:pointer;
-  transition:0.2s;
 }
-.action-btn:hover{
-  transform:scale(1.1);
-}
-.heart.active{
+.like.active{
   color:#ff2e63;
 }
-.double-heart{
-  position:absolute;
-  font-size:80px;
-  opacity:0;
-  pointer-events:none;
-}
-.double-heart.show{
-  animation:pop 0.6s ease;
-}
-@keyframes pop{
-  0%{opacity:0;transform:scale(0.5)}
-  50%{opacity:1;transform:scale(1.3)}
-  100%{opacity:0;transform:scale(1)}
-}
-.top-bar{
-  position:fixed;
-  top:0;
-  width:100%;
-  padding:15px;
-  display:flex;
-  justify-content:center;
-  font-weight:700;
-  background:rgba(0,0,0,0.5);
-  backdrop-filter:blur(10px);
-  z-index:10;
+.loader{
+  text-align:center;
+  padding:20px;
+  color:#777;
 }
 </style>
 </head>
 
 <body>
 
-<div class="top-bar">⚡ India Shock News</div>
-<div id="feed"></div>
-
-<script src="https://www.youtube.com/iframe_api"></script>
+<div class="header">⚡ India Shock News</div>
+<div class="feed" id="feed"></div>
+<div class="loader" id="loader">Loading...</div>
 
 <script type="module">
 
@@ -136,89 +101,65 @@ const firebaseConfig = {
   appId: "1:889325825355:web:1a2778a1542cbc60490cce"
 };
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let players=[];
-let activeIndex=0;
+let allNews=[];
+let visibleCount=5;
 
-async function load(){
+async function loadNews(){
   const snap=await getDocs(collection(db,"news"));
-  const data=[];
-  snap.forEach(doc=>data.push(doc.data()));
-  data.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));
-  render(data);
+  allNews=[];
+  snap.forEach(doc=>allNews.push(doc.data()));
+
+  // NEWEST FIRST
+  allNews.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));
+
+  render();
+  document.getElementById("loader").style.display="none";
 }
 
-function render(data){
-  const container=document.getElementById("feed");
-  container.innerHTML="";
-  data.forEach((n,i)=>{
-    container.innerHTML+=`
-      <div class="reel" data-index="${i}">
-        <div class="video-container" id="player-${i}"></div>
-        <div class="overlay">
+function render(){
+  const feed=document.getElementById("feed");
+  feed.innerHTML="";
+
+  allNews.slice(0,visibleCount).forEach(n=>{
+    feed.innerHTML+=`
+      <div class="card">
+        <iframe class="video"
+          src="https://www.youtube.com/embed/${n.videoId}"
+          frameborder="0"
+          allowfullscreen>
+        </iframe>
+        <div class="info">
           <div class="category">${n.category}</div>
           <div class="title">${n.title}</div>
-          <div class="meta">${n.channel}</div>
+          <div class="meta">${n.channel} • ${new Date(n.publishedAt).toLocaleString()}</div>
+          <div class="actions">
+            <span class="like" onclick="toggleLike(this)">❤️</span>
+            <span>💬</span>
+            <span>🔁</span>
+          </div>
         </div>
-        <div class="actions">
-          <div class="action-btn heart" onclick="toggleLike(this)">❤️</div>
-          <div class="action-btn">🔁</div>
-        </div>
-        <div class="double-heart">❤️</div>
       </div>
     `;
   });
-
-  initPlayers(data);
-  observe();
-}
-
-function initPlayers(data){
-  data.forEach((n,i)=>{
-    players[i]=new YT.Player(`player-${i}`,{
-      videoId:n.videoId,
-      playerVars:{
-        autoplay:0,
-        controls:0,
-        modestbranding:1,
-        rel:0
-      }
-    });
-  });
-}
-
-function observe(){
-  const reels=document.querySelectorAll(".reel");
-  const observer=new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{
-      const i=parseInt(entry.target.dataset.index);
-      if(entry.isIntersecting){
-        activeIndex=i;
-        players[i]?.playVideo();
-        players.forEach((p,index)=>{
-          if(index!==i) p?.pauseVideo();
-        });
-      }
-    });
-  },{threshold:0.75});
-  reels.forEach(r=>observer.observe(r));
 }
 
 window.toggleLike=function(el){
   el.classList.toggle("active");
 };
 
-document.addEventListener("dblclick",e=>{
-  const reel=e.target.closest(".reel");
-  if(!reel) return;
-  const heart=reel.querySelector(".double-heart");
-  heart.classList.add("show");
-  setTimeout(()=>heart.classList.remove("show"),600);
+// Infinite Scroll
+window.addEventListener("scroll",()=>{
+  if(window.innerHeight+window.scrollY>=document.body.offsetHeight-200){
+    visibleCount+=3;
+    render();
+  }
 });
 
-load();
+loadNews();
 
 </script>
 

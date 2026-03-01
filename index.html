@@ -129,7 +129,16 @@ async function load() {
   const snapshot = await getDocs(collection(db,"news"));
   const data=[];
   snapshot.forEach(doc=>data.push(doc.data()));
-  data.sort((a,b)=>new Date(b.publishedAt)-new Date(a.publishedAt));
+  data.forEach(n=>{
+  const hoursOld = (Date.now() - new Date(n.publishedAt)) / 3600000;
+  const recencyScore = Math.max(0, 48 - hoursOld);   // newer = higher
+  const randomness = Math.random() * 10;
+  const categoryBoost = n.category === "Crime" ? 5 : 0;
+
+  n.algorithmScore = recencyScore + randomness + categoryBoost;
+});
+
+data.sort((a,b)=> b.algorithmScore - a.algorithmScore);
   render(data);
 }
 

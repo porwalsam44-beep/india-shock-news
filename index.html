@@ -4,20 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>India Shock News</title>
+<meta name="description" content="Latest breaking shocking news from India. Crime, accident, politics and viral updates.">
 
 <style>
-body{margin:0;font-family:Arial;background:#0f0f0f;color:white;}
-header{background:linear-gradient(90deg,#ff2e2e,#b30000);padding:20px;text-align:center;font-size:22px;font-weight:bold;}
-.container{max-width:1000px;margin:auto;padding:20px;}
-.card{background:#1c1c1c;margin-bottom:25px;border-radius:12px;overflow:hidden;box-shadow:0 0 20px rgba(255,0,0,0.2);}
-iframe{width:100%;height:300px;}
-.content{padding:15px;}
-.title{font-size:17px;font-weight:bold;margin-bottom:8px;}
-.meta{font-size:13px;color:#aaa;margin-bottom:8px;}
-.desc{font-size:14px;color:#ccc;margin-bottom:10px;}
-.loader{border:5px solid #333;border-top:5px solid red;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto;}
-@keyframes spin{100%{transform:rotate(360deg);}}
-footer{text-align:center;padding:20px;font-size:12px;color:gray;}
+body{margin:0;font-family:Arial;background:#0f0f0f;color:white}
+header{background:linear-gradient(90deg,#ff2e2e,#b30000);padding:18px;text-align:center;font-weight:bold;font-size:20px}
+.container{max-width:1100px;margin:auto;padding:20px}
+.search{width:100%;padding:12px;border-radius:6px;border:none;margin-bottom:15px}
+.filters button{margin:5px;padding:8px 14px;border:none;border-radius:20px;background:#222;color:white;cursor:pointer}
+.filters button.active{background:#ff2e2e}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.card{background:#1c1c1c;border-radius:12px;overflow:hidden;cursor:pointer;transition:0.3s}
+.card:hover{transform:scale(1.03)}
+.thumb{width:100%;height:200px;object-fit:cover}
+.content{padding:15px}
+.title{font-weight:bold;margin-bottom:8px}
+.meta{font-size:13px;color:#aaa}
+.loader{text-align:center;padding:20px;display:none}
+.ad{margin:30px 0;padding:20px;background:#222;text-align:center;border-radius:10px;color:#888}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal iframe{width:90%;height:80%}
+.modal.active{display:flex}
 </style>
 </head>
 
@@ -26,18 +33,31 @@ footer{text-align:center;padding:20px;font-size:12px;color:gray;}
 <header>⚡ India Shocking News</header>
 
 <div class="container">
-<div id="videos"></div>
-<div id="loader" class="loader"></div>
+
+<input type="text" id="searchBox" class="search" placeholder="Search news...">
+
+<div class="filters">
+  <button data-cat="All" class="active">All</button>
+  <button data-cat="Crime">Crime</button>
+  <button data-cat="Accident">Accident</button>
+  <button data-cat="Politics">Politics</button>
+  <button data-cat="General">General</button>
 </div>
 
-<footer>Powered by Firebase Cache</footer>
+<div class="ad">AdSense Placement</div>
+
+<div id="newsGrid" class="grid"></div>
+<div id="loader" class="loader">Loading...</div>
+
+</div>
+
+<div id="modal" class="modal" onclick="this.classList.remove('active');this.innerHTML=''"></div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔥 REPLACE THIS ENTIRE OBJECT WITH YOUR FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyDUZh7BX5s_kcMLxKPjq73th6GS1VHl2Bw",
   authDomain: "india-shock-news-dd49b.firebaseapp.com",
@@ -50,31 +70,67 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const container = document.getElementById("videos");
-const loader = document.getElementById("loader");
+let allNews = [];
+let visibleCount = 8;
+let activeCategory = "All";
 
 async function loadNews(){
-loader.style.display="block";
-container.innerHTML="";
+  document.getElementById("loader").style.display="block";
+  const snapshot = await getDocs(collection(db,"news"));
+  allNews=[];
+  snapshot.forEach(doc=>allNews.push(doc.data()));
+  allNews.sort((a,b)=> new Date(b.publishedAt) - new Date(a.publishedAt));
+  render();
+  document.getElementById("loader").style.display="none";
+}
 
-const querySnapshot = await getDocs(collection(db, "news"));
+function render(){
+  const grid=document.getElementById("newsGrid");
+  grid.innerHTML="";
+  let filtered=allNews;
 
-querySnapshot.forEach((doc)=>{
-const data = doc.data();
+  if(activeCategory!=="All")
+    filtered=filtered.filter(n=>n.category===activeCategory);
 
-container.innerHTML += `
-<div class="card">
-<iframe src="https://www.youtube.com/embed/${data.videoId}" frameborder="0" allowfullscreen></iframe>
-<div class="content">
-<div class="title">${data.title}</div>
-<div class="meta">${data.channel} | ${data.date}</div>
-<div class="desc">${data.description}</div>
-</div>
-</div>`;
+  const search=document.getElementById("searchBox").value.toLowerCase();
+  filtered=filtered.filter(n=>n.title.toLowerCase().includes(search));
+
+  filtered.slice(0,visibleCount).forEach(n=>{
+    grid.innerHTML+=`
+      <div class="card" onclick="openVideo('${n.videoId}')">
+        <img class="thumb" src="${n.thumbnail}">
+        <div class="content">
+          <div class="title">${n.title}</div>
+          <div class="meta">${n.channel} | ${new Date(n.publishedAt).toLocaleString()}</div>
+        </div>
+      </div>`;
+  });
+}
+
+window.openVideo=function(id){
+  const modal=document.getElementById("modal");
+  modal.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`;
+  modal.classList.add("active");
+};
+
+document.getElementById("searchBox").addEventListener("input",()=>{visibleCount=8;render();});
+
+document.querySelectorAll(".filters button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeCategory=btn.dataset.cat;
+    visibleCount=8;
+    render();
+  });
 });
 
-loader.style.display="none";
-}
+window.addEventListener("scroll",()=>{
+  if(window.innerHeight+window.scrollY>=document.body.offsetHeight-200){
+    visibleCount+=6;
+    render();
+  }
+});
 
 loadNews();
 
